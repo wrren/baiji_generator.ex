@@ -4,8 +4,8 @@ Generates AWS Service code for [Baiji](https://github.com/wrren/baiji.ex). Reads
 
 ## Usage
 
-```elixir
-mix generate <api directory> <template file> <write directory>
+```shell
+$ mix generate <api directory> <template file> <write directory>
 ```
 
 ## Installation
