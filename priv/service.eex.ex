@@ -1,10 +1,10 @@
 defmodule Baiji.<%= spec.module_name %> do
   @moduledoc """
-  <%= spec.docs %>
+<%= spec.docs %>
   """
   <%= for action <- spec.actions do %>
   @doc """
-  <%= action.docs %>
+<%= action.docs %>
   """
   def <%= action.function_name %>(input \\ %{}, options \\ []) do
     %Baiji.Operation{

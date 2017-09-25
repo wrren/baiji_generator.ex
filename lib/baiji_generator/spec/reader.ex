@@ -108,6 +108,23 @@ defmodule Baiji.Generator.Spec.Reader do
   def then(out, fun), do: fun.(out)
 
   @doc """
+  Forms an output module name from a service
+  """
+  def module_name(service) do
+    service
+    |> String.split([" ", "-"])
+    |> Enum.map(fn component ->
+      case String.length(component) do
+        len when len <= 3 ->
+          String.upcase(component)
+        _ ->
+          String.capitalize(component)
+      end
+    end)
+    |> Enum.join
+  end
+
+  @doc """
   Generate an appropriate function name for the given Action
   """
   def function_name(name) do

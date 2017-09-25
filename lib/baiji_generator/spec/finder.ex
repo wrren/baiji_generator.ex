@@ -16,10 +16,10 @@ defmodule Baiji.Generator.Spec.Finder do
     |> Enum.filter(fn sub -> File.dir?(Path.join(directory, sub)) end)
     |> Enum.map(fn sub -> {sub, get_latest_version!(Path.join(directory, sub))} end)
     |> Enum.map(fn {service, version} -> 
-      %Spec{spec_file:  get_api_spec!(Path.join([directory, service, version])),
-            doc_file:   get_docs!(Path.join([directory, service, version])),
-            version:    version,
-            service:    service
+      %Spec{spec_file:    get_api_spec!(Path.join([directory, service, version])),
+            doc_file:     get_docs!(Path.join([directory, service, version])),
+            version:      version,
+            service:      service
       }
     end)
   end
@@ -62,22 +62,5 @@ defmodule Baiji.Generator.Spec.Finder do
     else
       raise Baiji.Generator.Error, message: "Failed to find API docs file in directory #{path}"
     end
-  end
-
-  @doc """
-  Forms an output module name from a service
-  """
-  def module_name(service) do
-    service
-    |> String.split([" ", "-"])
-    |> Enum.map(fn component ->
-      case String.length(component) do
-        len when len <= 3 ->
-          String.upcase(component)
-        _ ->
-          String.capitalize(component)
-      end
-    end)
-    |> Enum.join
   end
 end
