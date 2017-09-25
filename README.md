@@ -1,6 +1,12 @@
 # Baiji.Generator
 
-**TODO: Add description**
+Generates AWS Service code for [Baiji](https://github.com/wrren/baiji.ex). Reads API spec JSON files from the aws-sdk-go project in order to generate corresponding modules and functions.
+
+## Usage
+
+```elixir
+mix generate <api directory> <template file> <write directory>
+```
 
 ## Installation
 
