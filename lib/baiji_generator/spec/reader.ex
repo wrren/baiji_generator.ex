@@ -27,17 +27,17 @@ defmodule Baiji.Generator.Spec.Reader do
   @doc """
   Read the decoded XML contents of an API spec and populate the fields of the given spec struct
   """
-  def read_spec!(%{"metadata" => %{"serviceFullName" => full_name, "xmlNamespace" => _}} = contents, spec) do
-    %{spec | service: full_name, type: :xml, actions: read_actions!(contents)}
+  def read_spec!(%{"metadata" => %{"xmlNamespace" => _}} = contents, spec) do
+    %{spec | type: :xml, actions: read_actions!(contents)}
   end
-  def read_spec!(%{"metadata" => %{"serviceFullName" => full_name, "jsonVersion" => _}} = contents, spec) do
-    %{spec | service: full_name, type: :json, actions: read_actions!(contents)}
+  def read_spec!(%{"metadata" => %{"jsonVersion" => _}} = contents, spec) do
+    %{spec | type: :json, actions: read_actions!(contents)}
   end
-  def read_spec!(%{"metadata" => %{"serviceFullName" => full_name, "protocol" => "rest-json"}} = contents, spec) do
-    %{spec | service: full_name, type: :rest_json, actions: read_actions!(contents)}
+  def read_spec!(%{"metadata" => %{"protocol" => "rest-json"}} = contents, spec) do
+    %{spec | type: :rest_json, actions: read_actions!(contents)}
   end
-  def read_spec!(%{"metadata" => %{"serviceFullName" => full_name, "protocol" => "rest-xml"}} = contents, spec) do
-    %{spec | service: full_name, type: :rest_xml, actions: read_actions!(contents)}
+  def read_spec!(%{"metadata" => %{"protocol" => "rest-xml"}} = contents, spec) do
+    %{spec | type: :rest_xml, actions: read_actions!(contents)}
   end
 
   @doc """
@@ -47,6 +47,7 @@ defmodule Baiji.Generator.Spec.Reader do
     operations
     |> Map.to_list
     |> Enum.map(fn action -> read_action!(action) end)
+    |> Enum.map(fn action -> %{action | function_name: function_name(action.name)} end)
   end
 
   @doc """
@@ -87,7 +88,7 @@ defmodule Baiji.Generator.Spec.Reader do
   """
   def read_docs(%{"operations" => operations, "service" => docs}, %Spec{actions: actions} = spec) do
     %{spec | 
-      docs: docs, 
+      docs: Baiji.Generator.Docs.format(docs), 
       actions: Enum.map(actions, fn action -> read_action_docs(action, operations) end)
     }
   end
@@ -100,7 +101,28 @@ defmodule Baiji.Generator.Spec.Reader do
       nil ->
         %{action | docs: "No Documentation Availabale"}
       docs ->
-        %{action | docs: docs}        
+        %{action | docs: Baiji.Generator.Docs.format(docs)}        
     end
+  end
+
+  def then(out, fun), do: fun.(out)
+
+  @doc """
+  Generate an appropriate function name for the given Action
+  """
+  def function_name(name) do
+    name
+    |> String.graphemes
+    |> Enum.reduce({[], []}, fn(chr, {out, current}) ->
+      if chr >= "A" and chr <= "Z" do
+        {[Enum.join(:lists.reverse(current)) | out], [chr]}
+      else
+        {out, [chr | current]}
+      end
+    end)
+    |> then(fn {out, current} -> :lists.reverse([Enum.join(:lists.reverse(current)) | out]) end)
+    |> Enum.filter(fn string -> String.length(string) > 0 end)
+    |> Enum.map(fn string -> String.downcase(string) end)
+    |> Enum.join("_")
   end
 end

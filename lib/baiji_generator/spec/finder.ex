@@ -18,7 +18,8 @@ defmodule Baiji.Generator.Spec.Finder do
     |> Enum.map(fn {service, version} -> 
       %Spec{spec_file:  get_api_spec!(Path.join([directory, service, version])),
             doc_file:   get_docs!(Path.join([directory, service, version])),
-            version:    version
+            version:    version,
+            service:    service
       }
     end)
   end
