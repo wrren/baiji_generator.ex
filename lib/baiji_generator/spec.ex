@@ -4,8 +4,8 @@ defmodule Baiji.Generator.Spec do
             docs:         nil,
             service:      nil,
             full_name:    nil,
+            abbreviation: nil,
             version:      nil,
             type:         :unknown,
-            module_name:  nil,
             actions:      []
 end

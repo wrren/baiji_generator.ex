@@ -1,4 +1,4 @@
-defmodule Baiji.<%= spec.module_name %> do
+defmodule Baiji.<%= module %> do
   @moduledoc """
 <%= spec.docs %>
   """

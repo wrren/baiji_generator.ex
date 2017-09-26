@@ -27,48 +27,68 @@ defmodule Baiji.Generator.Spec.Reader do
   @doc """
   Read the decoded XML contents of an API spec and populate the fields of the given spec struct
   """
-  def read_spec!(%{"metadata" => %{"xmlNamespace" => _}} = contents, spec) do
-    %{spec | type: :xml, actions: read_actions!(contents)}
+  def read_spec!(%{"metadata" => metadata} = contents, spec) do
+    spec
+    |> parse_type(metadata)
+    |> parse_full_name(metadata)
+    |> parse_abbreviation(metadata)
+    |> parse_actions(contents)
   end
-  def read_spec!(%{"metadata" => %{"jsonVersion" => _}} = contents, spec) do
-    %{spec | type: :json, actions: read_actions!(contents)}
+
+  @doc """
+  Read the action type from the API spec's metadata section
+  """
+  def parse_type(%Spec{} = spec, %{"xmlNamespace" => _}), do: %{spec | type: :xml}
+  def parse_type(%Spec{} = spec, %{"jsonVersion" => _}), do: %{spec | type: :json}
+  def parse_type(%Spec{} = spec, %{"protocol" => "rest-json"}), do: %{spec | type: :rest_json}
+  def parse_type(%Spec{} = spec, %{"protocol" => "rest-xml"}), do: %{spec | type: :rest_xml}
+  
+  @doc """
+  Parse the service's full name from the API spec's metadata section
+  """
+  def parse_full_name(%Spec{} = spec, %{"serviceFullName" => full_name}) do
+    %{spec | full_name: full_name}
   end
-  def read_spec!(%{"metadata" => %{"protocol" => "rest-json"}} = contents, spec) do
-    %{spec | type: :rest_json, actions: read_actions!(contents)}
+
+  @doc """
+  Parse the service's abbreviated name from the API spec's metadata section if it exists
+  """
+  def parse_abbreviation(%Spec{} = spec, %{"serviceAbbreviation" => abbreviation}) do
+    %{spec | abbreviation: abbreviation}
   end
-  def read_spec!(%{"metadata" => %{"protocol" => "rest-xml"}} = contents, spec) do
-    %{spec | type: :rest_xml, actions: read_actions!(contents)}
-  end
+  def parse_abbreviation(spec, _), do: %{spec | abbreviation: nil}
 
   @doc """
   Decode actions from the contents of an API spec file
   """
-  def read_actions!(%{"operations" => operations}) do
-    operations
+  def parse_actions(%Spec{} = spec, %{"operations" => operations}) do
+    actions = operations
     |> Map.to_list
-    |> Enum.map(fn action -> read_action!(action) end)
+    |> Enum.map(fn action -> parse_action(action) end)
     |> Enum.map(fn action -> %{action | function_name: function_name(action.name)} end)
+
+    %{spec | actions: actions}
   end
 
   @doc """
   Read metadata about an AWS API operation into an Action struct
   """
-  def read_action!({name, %{"http" => %{"method" => "POST", "requestUri" => uri}}}) do
+  def parse_action({name, %{"http" => %{"method" => "POST", "requestUri" => uri}}}) do
     %Action{name: name, method: :post, uri: uri}
   end
-  def read_action!({name, %{"http" => %{"method" => "PATCH", "requestUri" => uri}}}) do
+  def parse_action({name, %{"http" => %{"method" => "PATCH", "requestUri" => uri}}}) do
     %Action{name: name, method: :patch, uri: uri}
   end
-  def read_action!({name, %{"http" => %{"method" => "PUT", "requestUri" => uri}}}) do
+  def parse_action({name, %{"http" => %{"method" => "PUT", "requestUri" => uri}}}) do
     %Action{name: name, method: :put, uri: uri}
   end
-  def read_action!({name, %{"http" => %{"method" => "GET", "requestUri" => uri}}}) do
+  def parse_action({name, %{"http" => %{"method" => "GET", "requestUri" => uri}}}) do
     %Action{name: name, method: :get, uri: uri}
   end
-  def read_action!({name, %{"http" => %{"method" => "DELETE", "requestUri" => uri}}}) do
+  def parse_action({name, %{"http" => %{"method" => "DELETE", "requestUri" => uri}}}) do
     %Action{name: name, method: :delete, uri: uri}
   end
-  def read_action!({name, %{"http" => %{"method" => "HEAD", "requestUri" => uri}}}) do
+  def parse_action({name, %{"http" => %{"method" => "HEAD", "requestUri" => uri}}}) do
     %Action{name: name, method: :head, uri: uri}
   end
 
@@ -106,24 +126,7 @@ defmodule Baiji.Generator.Spec.Reader do
   end
 
   def then(out, fun), do: fun.(out)
-
-  @doc """
-  Forms an output module name from a service
-  """
-  def module_name(service) do
-    service
-    |> String.split([" ", "-"])
-    |> Enum.map(fn component ->
-      case String.length(component) do
-        len when len <= 3 ->
-          String.upcase(component)
-        _ ->
-          String.capitalize(component)
-      end
-    end)
-    |> Enum.join
-  end
-
+  
   @doc """
   Generate an appropriate function name for the given Action
   """
