@@ -35,7 +35,7 @@ defmodule Baiji.Generator.Spec.Writer do
   end
   def file_name(%Spec{abbreviation: abbreviation}) do
     abbreviation
-    |> String.split([" ", "-", "."])
+    |> String.split([" ", "-", ".", "/"])
     |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
     |> Enum.map(&String.downcase/1)
     |> Enum.join("_")
@@ -47,14 +47,14 @@ defmodule Baiji.Generator.Spec.Writer do
   """
   def module_name(%Spec{full_name: full_name, abbreviation: nil}) do
     full_name
-    |> String.split([" ", "-", "."])
+    |> String.split([" ", "-", ".", "/"])
     |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
     |> Enum.map(&String.capitalize/1)
     |> Enum.join
   end
   def module_name(%Spec{abbreviation: abbreviation}) do
     abbreviation
-    |> String.split([" ", "-", "."])
+    |> String.split([" ", "-", ".", "/"])
     |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
     |> Enum.join
   end
