@@ -23,14 +23,21 @@ defmodule Baiji.Generator.Spec.Writer do
   def then(out, fun), do: fun.(out)  
 
   @doc """
-  Given an AWS service name, generate an appropriate output file name
+  Given a spec, generate an appropriate output file name
   """
-  def file_name(%Spec{service: service}) do
-    service
-    |> String.split([" ", "."])
-    |> Enum.filter(fn component -> String.length(component) > 0 end)
+  def file_name(%Spec{full_name: full_name, abbreviation: nil}) do
+    full_name
+    |> String.split([" ", "-", ".", "/"])
     |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
-    |> Enum.map(fn component -> String.downcase(component) end)
+    |> Enum.map(&String.downcase/1)
+    |> Enum.join("_")
+    |> Kernel.<>(".ex")
+  end
+  def file_name(%Spec{abbreviation: abbreviation}) do
+    abbreviation
+    |> String.split([" ", "-", "."])
+    |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
+    |> Enum.map(&String.downcase/1)
     |> Enum.join("_")
     |> Kernel.<>(".ex")
   end
@@ -38,20 +45,17 @@ defmodule Baiji.Generator.Spec.Writer do
   @doc """
   Forms an output module name from a service
   """
-  def module_name(%Spec{full_name: full_name, abbreviation: nil}), do: module_name(full_name)
-  def module_name(%Spec{abbreviation: abbreviation}), do: module_name(abbreviation)  
-  def module_name(name) when is_binary(name) do
-    name
+  def module_name(%Spec{full_name: full_name, abbreviation: nil}) do
+    full_name
     |> String.split([" ", "-", "."])
     |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
-    |> Enum.map(fn component ->
-      case String.length(component) do
-        len when len <= 3 ->
-          String.upcase(component)
-        _ ->
-          String.capitalize(component)
-      end
-    end)
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join
+  end
+  def module_name(%Spec{abbreviation: abbreviation}) do
+    abbreviation
+    |> String.split([" ", "-", "."])
+    |> Enum.filter(fn "Amazon" -> false; "AWS" -> false; _ -> true end)
     |> Enum.join
   end
 end
