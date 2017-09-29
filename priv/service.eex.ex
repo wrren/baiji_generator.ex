@@ -8,11 +8,16 @@ defmodule Baiji.<%= module %> do
   """
   def <%= action.function_name %>(input \\ %{}, options \\ []) do
     %Baiji.Operation{
-      input:    input,
-      options:  options,
-      action:   "<%= action.name %>",
-      type:     :<%= spec.type %>,
-      method:   :<%= action.method %>
+      service:        "<%= spec.service %>",
+      endpoint:       "<%= action.uri %>",
+      input:          input,
+      options:        options,
+      action:         "<%= action.name %>",
+      <%= if spec.target_prefix != nil do %>
+      target_prefix:  "<%= spec.target_prefix %>",
+      <% end %>
+      type:           :<%= spec.type %>,
+      method:         :<%= action.method %>
     }
   end
   <% end %>

@@ -30,6 +30,7 @@ defmodule Baiji.Generator.Spec.Reader do
   def read_spec!(%{"metadata" => metadata} = contents, spec) do
     spec
     |> parse_type(metadata)
+    |> parse_target_prefix(metadata)
     |> parse_full_name(metadata)
     |> parse_abbreviation(metadata)
     |> parse_actions(contents)
@@ -38,10 +39,17 @@ defmodule Baiji.Generator.Spec.Reader do
   @doc """
   Read the action type from the API spec's metadata section
   """
+  def parse_type(%Spec{} = spec, %{"protocol" => "ec2"}), do: %{spec | type: :ec2}
   def parse_type(%Spec{} = spec, %{"xmlNamespace" => _}), do: %{spec | type: :xml}
   def parse_type(%Spec{} = spec, %{"jsonVersion" => _}), do: %{spec | type: :json}
   def parse_type(%Spec{} = spec, %{"protocol" => "rest-json"}), do: %{spec | type: :rest_json}
   def parse_type(%Spec{} = spec, %{"protocol" => "rest-xml"}), do: %{spec | type: :rest_xml}
+  
+  @doc """
+  Parse the targetPrefix attribute from the API metadata and add it to the spec
+  """
+  def parse_target_prefix(%Spec{} = spec, %{"targetPrefix" => prefix}), do: %{spec | target_prefix: prefix}
+  def parse_target_prefix(%Spec{} = spec, _), do: %{spec | target_prefix: nil}
   
   @doc """
   Parse the service's full name from the API spec's metadata section
