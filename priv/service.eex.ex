@@ -17,6 +17,7 @@ defmodule Baiji.<%= module %> do
       target_prefix:  "<%= spec.target_prefix %>",
       <% end %>
       type:           :<%= spec.type %>,
+      version:        "<%= spec.version %>",
       method:         :<%= action.method %>
     }
   end
