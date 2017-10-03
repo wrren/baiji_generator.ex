@@ -32,6 +32,6 @@ defmodule Baiji.<%= module %> do
   Returns a map containing the input/output shapes for this endpoint
   """
   def __shapes__ do
-    <%= inspect(spec.shapes) %>
+    <%= inspect(spec.shapes, limit: :infinity) %>
   end
 end
