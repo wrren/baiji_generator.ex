@@ -3,5 +3,7 @@ defmodule Baiji.Generator.Action do
             function_name:  nil,
             method:         :unknown,
             uri:            nil,
-            docs:           nil
+            docs:           nil,
+            input_shape:    nil,
+            output_shape:   nil
 end

@@ -31,9 +31,11 @@ defmodule Baiji.Generator.Spec.Reader do
     spec
     |> parse_type(metadata)
     |> parse_target_prefix(metadata)
+    |> parse_endpoint_prefix(metadata)
     |> parse_full_name(metadata)
     |> parse_abbreviation(metadata)
     |> parse_actions(contents)
+    |> parse_shapes(contents)
   end
 
   @doc """
@@ -45,6 +47,12 @@ defmodule Baiji.Generator.Spec.Reader do
   def parse_type(%Spec{} = spec, %{"protocol" => "rest-json"}), do: %{spec | type: :rest_json}
   def parse_type(%Spec{} = spec, %{"protocol" => "rest-xml"}), do: %{spec | type: :rest_xml}
   
+  @doc """
+  Parse the service endpoint prefix if it's present
+  """
+  def parse_endpoint_prefix(%Spec{} = spec, %{"endpointPrefix" => prefix}), do: %{spec | endpoint_prefix: prefix}
+  def parse_endpoint_prefix(%Spec{service: service} = spec, _), do: %{spec | endpoint_prefix: service}
+
   @doc """
   Parse the targetPrefix attribute from the API metadata and add it to the spec
   """
@@ -72,34 +80,58 @@ defmodule Baiji.Generator.Spec.Reader do
   def parse_actions(%Spec{} = spec, %{"operations" => operations}) do
     actions = operations
     |> Map.to_list
-    |> Enum.map(fn action -> parse_action(action) end)
-    |> Enum.map(fn action -> %{action | function_name: function_name(action.name)} end)
+    |> Enum.map(fn {name, attributes} -> 
+      %Action{name: name}
+      |> parse_http_attributes(attributes)
+      |> parse_input_shape(attributes)
+      |> parse_output_shape(attributes)
+      |> generate_function_name
+    end)
 
     %{spec | actions: actions}
   end
 
   @doc """
-  Read metadata about an AWS API operation into an Action struct
+  Parse shape definitions from the given spec JSON
   """
-  def parse_action({name, %{"http" => %{"method" => "POST", "requestUri" => uri}}}) do
-    %Action{name: name, method: :post, uri: uri}
-  end
-  def parse_action({name, %{"http" => %{"method" => "PATCH", "requestUri" => uri}}}) do
-    %Action{name: name, method: :patch, uri: uri}
-  end
-  def parse_action({name, %{"http" => %{"method" => "PUT", "requestUri" => uri}}}) do
-    %Action{name: name, method: :put, uri: uri}
-  end
-  def parse_action({name, %{"http" => %{"method" => "GET", "requestUri" => uri}}}) do
-    %Action{name: name, method: :get, uri: uri}
-  end
-  def parse_action({name, %{"http" => %{"method" => "DELETE", "requestUri" => uri}}}) do
-    %Action{name: name, method: :delete, uri: uri}
-  end
-  def parse_action({name, %{"http" => %{"method" => "HEAD", "requestUri" => uri}}}) do
-    %Action{name: name, method: :head, uri: uri}
+  def parse_shapes(%Spec{} = spec, %{"shapes" => shapes}) do
+    %{spec | shapes: shapes}
   end
 
+  @doc """
+  Read metadata about an AWS API operation into an Action struct
+  """
+  def parse_http_attributes(%Action{} = action, %{"http" => %{"method" => "POST", "requestUri" => uri}}) do
+    %{action | method: :post, uri: uri}
+  end
+  def parse_http_attributes(%Action{} = action, %{"http" => %{"method" => "PATCH", "requestUri" => uri}}) do
+    %{action | method: :patch, uri: uri}
+  end
+  def parse_http_attributes(%Action{} = action, %{"http" => %{"method" => "PUT", "requestUri" => uri}}) do
+    %{action | method: :put, uri: uri}
+  end
+  def parse_http_attributes(%Action{} = action, %{"http" => %{"method" => "GET", "requestUri" => uri}}) do
+    %{action | method: :get, uri: uri}
+  end
+  def parse_http_attributes(%Action{} = action, %{"http" => %{"method" => "DELETE", "requestUri" => uri}}) do
+    %{action | method: :delete, uri: uri}
+  end
+  def parse_http_attributes(%Action{} = action, %{"http" => %{"method" => "HEAD", "requestUri" => uri}}) do
+    %{action | method: :head, uri: uri}
+  end
+
+  @doc """
+  Parse the input Shape name for this action, if present
+  """
+  def parse_input_shape(%Action{} = action, %{"input" => %{"shape" => shape}}), do: %{action | input_shape: shape}
+  def parse_input_shape(%Action{} = action, _), do: action
+
+  @doc """
+  Parse the output shape name for this action, if present
+  """
+  def parse_output_shape(%Action{} = action, %{"output" => %{"shape" => shape}}), do: %{action | output_shape: shape}
+  def parse_output_shape(%Action{} = action, _), do: action
+  
   @doc """
   Read and decode the contents of a docs-2 file and attach documentation to each action in 
   the given spec and to the spec itself
@@ -138,7 +170,8 @@ defmodule Baiji.Generator.Spec.Reader do
   @doc """
   Generate an appropriate function name for the given Action
   """
-  def function_name(name) do
+  def generate_function_name(%Action{name: name} = action), do: %{action | function_name: generate_function_name(name)}
+  def generate_function_name(name) do
     name
     |> String.graphemes
     |> Enum.reduce({[], []}, fn(chr, {out, current}) ->
