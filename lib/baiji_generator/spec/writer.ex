@@ -12,7 +12,7 @@ defmodule Baiji.Generator.Spec.Writer do
   end
 
   def generate_service_file_contents(%Spec{} = spec, template_file) do
-    EEx.eval_file(template_file, [spec: spec, module: module_name(spec)])
+    EEx.eval_file(template_file, [spec: spec, module: module_name(spec)], [trim: true])
   end
 
   def write_service_file(path, spec, contents) do
