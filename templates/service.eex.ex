@@ -18,6 +18,9 @@ defmodule Baiji.<%= module %> do
       method:           :<%= action.method %>,
       input_shape:      "<%= action.input_shape %>",
       output_shape:     "<%= action.output_shape %>",
+      <%= if action.output_wrapper != nil do %>
+      output_wrapper:   "<%= action.output_wrapper %>",
+      <% end %>      
       endpoint:         __spec__()
     }
   end
@@ -32,8 +35,6 @@ defmodule Baiji.<%= module %> do
       service:          "<%= spec.service %>",
 <%= if spec.target_prefix != nil do %>
       target_prefix:    "<%= spec.target_prefix %>",
-<% else %>
-      target_prefix:    nil,
 <% end %>
       endpoint_prefix:  "<%= spec.endpoint_prefix %>",
       type:             :<%= spec.type %>,

@@ -5,5 +5,6 @@ defmodule Baiji.Generator.Action do
             uri:            nil,
             docs:           nil,
             input_shape:    nil,
-            output_shape:   nil
+            output_shape:   nil,
+            output_wrapper: nil
 end

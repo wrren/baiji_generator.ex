@@ -129,6 +129,7 @@ defmodule Baiji.Generator.Spec.Reader do
   @doc """
   Parse the output shape name for this action, if present
   """
+  def parse_output_shape(%Action{} = action, %{"output" => %{"shape" => shape, "resultWrapper" => wrapper}}), do: %{action | output_shape: shape, output_wrapper: wrapper}  
   def parse_output_shape(%Action{} = action, %{"output" => %{"shape" => shape}}), do: %{action | output_shape: shape}
   def parse_output_shape(%Action{} = action, _), do: action
   
